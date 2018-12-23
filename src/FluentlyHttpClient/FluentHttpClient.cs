@@ -73,6 +73,13 @@ namespace FluentlyHttpClient
 		/// <param name="fluentRequest">HTTP fluent request to send.</param>
 		/// <returns>Returns HTTP response.</returns>
 		Task<FluentHttpResponse> Send(FluentHttpRequest fluentRequest);
+		/// <summary>
+		/// Send HTTP request.
+		/// </summary>
+		/// <typeparam name="T">Return Type</typeparam>
+		/// <param name="fluentRequest">HTTP fluent request to send.</param>
+		/// <returns>FluentHttpResponse with T Data</returns>
+		Task<FluentHttpResponse<T>> SendAsync<T>(FluentHttpRequest fluentRequest);
 	}
 
 	/// <summary>
@@ -179,6 +186,33 @@ namespace FluentlyHttpClient
 				response.EnsureSuccessStatusCode();
 
 			return response;
+		}
+
+		/// <inheritdoc />
+		public async Task<FluentHttpResponse<T>> SendAsync<T>(FluentHttpRequest fluentRequest)
+		{
+			if (fluentRequest == null) throw new ArgumentNullException(nameof(fluentRequest));
+			var response = await _middlewareRunner.Run(_middleware, fluentRequest, async request =>
+			{
+				var result = await RawHttpClient.SendAsync(request.Message, request.CancellationToken)
+					.ConfigureAwait(false);
+				return ToFluentResponse(result, request.Items);
+			}).ConfigureAwait(false);
+
+			if (fluentRequest.HasSuccessStatusOrThrow)
+				response.EnsureSuccessStatusCode();
+
+
+			if (!response.IsSuccessStatusCode)
+			{
+				return new FluentHttpResponse<T>(response);
+			}
+
+			return new FluentHttpResponse<T>(response)
+			{
+				Data = await response.As<T>()
+			};
+
 		}
 
 		private HttpClient Configure(FluentHttpClientOptions options)

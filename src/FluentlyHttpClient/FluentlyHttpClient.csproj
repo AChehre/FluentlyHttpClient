@@ -3,16 +3,17 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Description>Fluent Http Client with a fluent APIs which are intuitive, easy to use and also highly extensible.</Description>
-    <Product>FluentlyHttpClient</Product>
-    <Company>Sketch7</Company>
-    <Authors>Stephen Lautier</Authors>
+    <Product>Paran.FluentlyHttpClient</Product>
+    <Company></Company>
+    <Authors>Ahmad Chehreghani, Stephen Lautier</Authors>
     <PackageTags>httpclient fluentapi fluenthttp graphql graphqlclient</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/sketch7/FluentlyHttpClient.git</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/sketch7/FluentlyHttpClient</PackageProjectUrl>
-    <PackageIconUrl>https://avatars0.githubusercontent.com/u/16617196?v=3&amp;s=200</PackageIconUrl>
+    <RepositoryUrl>https://github.com/AChehre/FluentlyHttpClient.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/AChehre/FluentlyHttpClient</PackageProjectUrl>
+    <PackageIconUrl></PackageIconUrl>
     <LangVersion>7.1</LangVersion>
+    <PackageId>Paran.FluentlyHttpClient</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

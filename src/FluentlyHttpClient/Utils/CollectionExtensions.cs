@@ -29,6 +29,9 @@ namespace FluentlyHttpClient
 	[DebuggerDisplay("{DebuggerDisplay,nq}")]
 	public class QueryStringOptions
 	{
+		/// <summary>
+		/// Debugger Display
+		/// </summary>
 		protected string DebuggerDisplay => $"CollectionMode: '{CollectionMode}'";
 
 		/// <summary>
