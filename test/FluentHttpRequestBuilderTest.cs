@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using FluentlyHttpClient;
+using FluentlyHttpClient.Constants;
 using FluentlyHttpClient.Test;
 using RichardSzalay.MockHttp;
 using Xunit;
