@@ -26,8 +26,8 @@ public class BuildPaths
             buildDirectories.RootDir.CombineWithFilePath($"{appInfo.AppName}.sln"),
             buildDirectories.TestResults.CombineWithFilePath("OpenCover.xml"),
             buildDirectories.RootDir.CombineWithFilePath("ReleaseNotes.md"),
-            buildDirectories.Artifacts.CombineWithFilePath("ReleaseNotes.md"),
-            buildDirectories.Artifacts.CombineWithFilePath("DupOutpuFinder.xml"),
+            buildDirectories.ArtifactsDir.CombineWithFilePath("ReleaseNotes.md"),
+            buildDirectories.ArtifactsDir.CombineWithFilePath("DupOutpuFinder.xml"),
             projectsToPack,
             testAssemblies);
 
@@ -44,21 +44,35 @@ public class BuildPaths
     public static BuildDirectories GetBuildDirectories(ICakeContext context)
     {
         var rootDir = context.MakeAbsolute((DirectoryPath)context.Directory("../"));
-        var artifacts = rootDir.Combine(".artifacts");
-        var testResults = artifacts.Combine("Test-Results");
+        var artifactsDir = rootDir.Combine("artifacts");
+        var testResults = artifactsDir.Combine("Test-Results");
         var srcRootDir =  rootDir.Combine("src");
 
         var testsRootDir = rootDir.Combine("tests");
+        var specsRootDir = rootDir.Combine("specs");
+        var testResultsDir = artifactsDir.Combine("test-results");
+        var nuspecRootDir = artifactsDir.Combine("nuspec");
+        var nugetRootDir = artifactsDir.Combine("nuget");
+
+
+
         var testDirs = new []{
                                 testsRootDir,
                             };
         var toClean = new[] {
-                                 artifacts
+                                artifactsDir,
+                                testResultsDir,
+                                nuspecRootDir,
                             };
+
+      
         return new BuildDirectories(rootDir,
                                     srcRootDir,
                                     testsRootDir,
-                                    artifacts,
+                                    specsRootDir,
+                                    artifactsDir,
+                                    nuspecRootDir,
+                                    nugetRootDir,
                                     testResults,
                                     testDirs,
                                     toClean);
@@ -96,10 +110,12 @@ public class BuildFiles
 public class BuildDirectories
 {
     public DirectoryPath RootDir { get; private set; }
-
     public DirectoryPath SrcRootDir { get; private set; }
     public DirectoryPath TestsRootDir { get; private set; }
-    public DirectoryPath Artifacts { get; private set; }
+    public DirectoryPath SpecsRootDir { get; private set; }
+    public DirectoryPath ArtifactsDir { get; private set; }
+    public DirectoryPath NuspecRootDir { get; private set; }
+    public DirectoryPath NugetRootDir { get; private set; }    
     public DirectoryPath TestResults { get; private set; }
     public ICollection<DirectoryPath> TestDirs { get; private set; }
     public ICollection<DirectoryPath> ToClean { get; private set; }
@@ -108,7 +124,10 @@ public class BuildDirectories
         DirectoryPath rootDir,
         DirectoryPath srcRootDir,
         DirectoryPath testsRootDir,
-        DirectoryPath artifacts,
+        DirectoryPath specsRootDir,
+        DirectoryPath artifactsDir,
+        DirectoryPath nuspecRootDir,
+        DirectoryPath nugetRootDir,
         DirectoryPath testResults,
         ICollection<DirectoryPath> testDirs,
         ICollection<DirectoryPath> toClean)
@@ -116,7 +135,10 @@ public class BuildDirectories
         RootDir = rootDir;
         SrcRootDir = srcRootDir;
         TestsRootDir = testsRootDir;
-        Artifacts = artifacts;
+        SpecsRootDir = specsRootDir;
+        ArtifactsDir = artifactsDir;
+        NuspecRootDir = nuspecRootDir;
+        NugetRootDir = nugetRootDir;
         TestDirs = testDirs;
         ToClean = toClean;
         TestResults = testResults;
@@ -137,7 +159,7 @@ public class BuildPackages
         var packageName = "AChehre.FluentlyHttpClient." + version.SemVersion + ".nupkg";
         var packages = new [] 
         {
-            paths.Directories.Artifacts.CombineWithFilePath(packageName),
+            paths.Directories.NugetRootDir.CombineWithFilePath(packageName),
         };
 
         return new BuildPackages(packages);    

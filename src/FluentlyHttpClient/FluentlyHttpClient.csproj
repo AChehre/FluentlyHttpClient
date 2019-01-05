@@ -13,7 +13,7 @@
     <PackageProjectUrl>https://github.com/AChehre/FluentlyHttpClient</PackageProjectUrl>
     <PackageIconUrl></PackageIconUrl>
     <LangVersion>7.1</LangVersion>
-    <PackageId>Paran.FluentlyHttpClient</PackageId>
+    <PackageId>Achehre.FluentlyHttpClient</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
