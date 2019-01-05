@@ -31,6 +31,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmark", "benchmark", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentlyHttpClient.Benchmarks", "benchmark\FluentlyHttpClient.Benchmarks.csproj", "{4D5EB4E3-1076-4AEA-A534-107F321E41C0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{8CDB0980-D8A1-4A5C-8BC6-C2A28B511C28}"
+	ProjectSection(SolutionItems) = preProject
+		build\build.cake = build\build.cake
+		build\build.ps1 = build\build.ps1
+		build\build.sh = build\build.sh
+		build\cake.config = build\cake.config
+		build\credentials.cake = build\credentials.cake
+		build\parameters.cake = build\parameters.cake
+		build\paths.cake = build\paths.cake
+		build\version.cake = build\version.cake
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
