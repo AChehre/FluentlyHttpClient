@@ -1,10 +1,11 @@
 #tool "nuget:?package=GitVersion.CommandLine"
 #load "./parameters.cake"
-// #tool "nuget:?package=xunit.runner.console"
-// #addin "NuGet.Core"
-// #addin nuget:?package=System.Threading.Tasks.Dataflow&version=4.5.24
-// #r "References/CSProjectHelpers.dll"
-// #r "References/Microsoft.Build.dll"
+#tool "nuget:?package=OpenCover"
+#tool "nuget:?package=ReportGenerator"
+
+
+
+using System.Text.RegularExpressions;
 
 ///////////////////////////////////////////////////////////////////////////////
 // ARGUMENTS
@@ -46,14 +47,6 @@ Teardown(ctx =>
 ///////////////////////////////////////////////////////////////////////////////
 // TASK DEFINITIONS
 ///////////////////////////////////////////////////////////////////////////////
-private void CleanProjects(string projectKind, IEnumerable<string> projectNames)
-{
-    foreach(var project in projectNames)
-    {
-        CleanDirectories($"./{projectKind}/{project}/bin/**");
-        CleanDirectories($"./{projectKind}/{project}/obj/**");
-    }
-}
 
 Task("Clean")
 	.Does(() =>
@@ -80,7 +73,7 @@ Task("Clean")
 	CleanDirectories(parameters.Paths.Directories.ToClean);        
 
     EnsureDirectoryExists(parameters.Paths.Directories.ArtifactsDir);
-    EnsureDirectoryExists(parameters.Paths.Directories.TestResults);
+    EnsureDirectoryExists(parameters.Paths.Directories.TestResultsDir);
     EnsureDirectoryExists(parameters.Paths.Directories.NugetRootDir);
 
 
@@ -100,6 +93,7 @@ Task("Restore")
 	Information("Restoring NuGet url: {0}", nugetServerUrl);
 	DotNetCoreRestore(solution, new DotNetCoreRestoreSettings
 	{
+		Verbosity = DotNetCoreVerbosity.Minimal,     
 		Sources = new [] {nugetServerUrl}
 	});
 });
@@ -116,11 +110,53 @@ Task("Build")
 	});
 });
 
+Task("Tests-With_Coverage")
+    .IsDependentOn("Build")
+    .Does(() =>
+{
+	Action<ICakeContext> testAction = context =>
+  	{
+		foreach(var testDir in parameters.Paths.Directories.TestDirs)
+    	{
+	 		var projects = GetFiles($"{testDir}/**/*.Test.csproj");
+        	foreach(var project in projects)
+        	{
+				var vSTestReportPath  = $"{parameters.Paths.Directories.TestResultsDir.CombineWithFilePath(project.GetFilenameWithoutExtension()).FullPath}.xml";
+				var settings = new DotNetCoreTestSettings
+     				{
+	    				Configuration = parameters.Configuration,
+						OutputDirectory = parameters.Paths.Directories.TestResultsDir,
+						ResultsDirectory = parameters.Paths.Directories.TestResultsDir,
+						Verbosity = DotNetCoreVerbosity.Minimal,
+						VSTestReportPath  = vSTestReportPath,
+     				};
+ 					context.DotNetCoreTest(project.FullPath, settings);
+        	}
+		}
+	 };
+ 
+		
+ 	    OpenCover(tool => testAction(tool),
+                        parameters.Paths.Files.TestCoverageOutput,
+                        new OpenCoverSettings()
+                        {
+                            ReturnTargetCodeOffset = 0,
+                            OldStyle = true,
+                            MergeOutput = true
+                        }
+                        .WithFilter($"+[{parameters.AppInfo.AppName}]*")
+                        .WithFilter($"-[*.Test]*")
+						.ExcludeByAttribute("*.ExcludeFromCodeCoverage*")
+                        .ExcludeByFile("*.Designer.cs;*.g.cs;*.g.i.cs"));
+      ReportGenerator(parameters.Paths.Files.TestCoverageOutput, parameters.Paths.Directories.TestResultsCoverReportDir);
+});
+
 
 Task("Default")
 	.IsDependentOn("Clean")
 	.IsDependentOn("Restore")
-	.IsDependentOn("Build");
+	.IsDependentOn("Build")
+	.IsDependentOn("Tests-With_Coverage");
 
 RunTarget(parameters.Target);
 

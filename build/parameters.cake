@@ -15,8 +15,8 @@ public class AppInfo
        {
             AppName = "FluentlyHttpClient",
             GitHubRepositoryName  = "FluentlyHttpClient",
-            TargetFramework = "netcoreapp2.0",
-            TargetFrameworkFull = "netstandard1.1",
+            TargetFramework = "netcoreapp2.2",
+            TargetFrameworkFull = "netstandard2.0",
        };
     }
 

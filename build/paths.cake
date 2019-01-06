@@ -11,12 +11,15 @@ public class BuildPaths
     public static BuildPaths GetPaths(ICakeContext context, AppInfo appInfo, string configuration)
     {
         var buildDirectories = GetBuildDirectories(context);
-        var testAssemblies = buildDirectories.TestDirs
-                                             .Select(dir => dir.Combine("bin")
-                                                               .Combine(configuration)
-                                                               .Combine(appInfo.TargetFramework)
-                                                               .CombineWithFilePath(dir.GetDirectoryName() + ".dll"))
-                                             .ToList();
+        List<FilePath> testAssemblies = new List<FilePath>();
+
+        foreach(var testDir in buildDirectories.TestDirs)
+        {
+            var adr = $"{testDir.ToString()}/**/bin/{configuration}/{appInfo.TargetFramework}/*.test.dll";
+            var files =  context.GetFiles(adr);
+            if (files != null)
+            testAssemblies.AddRange(files);
+        }
         var projectsToPack = new List<FilePath>
         {
             buildDirectories.SrcRootDir.CombineWithFilePath($"{appInfo.AppName}/{appInfo.AppName}.csproj"),
@@ -24,7 +27,7 @@ public class BuildPaths
 
         var buildFiles = new BuildFiles(
             buildDirectories.RootDir.CombineWithFilePath($"{appInfo.AppName}.sln"),
-            buildDirectories.TestResults.CombineWithFilePath("OpenCover.xml"),
+            buildDirectories.TestResultsDir.CombineWithFilePath("OpenCover.xml"),
             buildDirectories.RootDir.CombineWithFilePath("ReleaseNotes.md"),
             buildDirectories.ArtifactsDir.CombineWithFilePath("ReleaseNotes.md"),
             buildDirectories.ArtifactsDir.CombineWithFilePath("DupOutpuFinder.xml"),
@@ -45,12 +48,12 @@ public class BuildPaths
     {
         var rootDir = context.MakeAbsolute((DirectoryPath)context.Directory("../"));
         var artifactsDir = rootDir.Combine("artifacts");
-        var testResults = artifactsDir.Combine("Test-Results");
+        var testResultsDir = artifactsDir.Combine("Test-Results");
+        var testResultsCoverReportDir = testResultsDir.Combine("Test-Results-Cover-Report");
         var srcRootDir =  rootDir.Combine("src");
 
         var testsRootDir = rootDir.Combine("tests");
         var specsRootDir = rootDir.Combine("specs");
-        var testResultsDir = artifactsDir.Combine("test-results");
         var nuspecRootDir = artifactsDir.Combine("nuspec");
         var nugetRootDir = artifactsDir.Combine("nuget");
 
@@ -58,6 +61,7 @@ public class BuildPaths
 
         var testDirs = new []{
                                 testsRootDir,
+                                specsRootDir,
                             };
         var toClean = new[] {
                                 artifactsDir,
@@ -73,7 +77,8 @@ public class BuildPaths
                                     artifactsDir,
                                     nuspecRootDir,
                                     nugetRootDir,
-                                    testResults,
+                                    testResultsDir,
+                                    testResultsCoverReportDir,
                                     testDirs,
                                     toClean);
     }
@@ -116,7 +121,8 @@ public class BuildDirectories
     public DirectoryPath ArtifactsDir { get; private set; }
     public DirectoryPath NuspecRootDir { get; private set; }
     public DirectoryPath NugetRootDir { get; private set; }    
-    public DirectoryPath TestResults { get; private set; }
+    public DirectoryPath TestResultsDir { get; private set; }
+    public DirectoryPath TestResultsCoverReportDir{ get; private set; }
     public ICollection<DirectoryPath> TestDirs { get; private set; }
     public ICollection<DirectoryPath> ToClean { get; private set; }
 
@@ -128,7 +134,8 @@ public class BuildDirectories
         DirectoryPath artifactsDir,
         DirectoryPath nuspecRootDir,
         DirectoryPath nugetRootDir,
-        DirectoryPath testResults,
+        DirectoryPath testResultsDir,
+        DirectoryPath testResultsCoverReportDir,
         ICollection<DirectoryPath> testDirs,
         ICollection<DirectoryPath> toClean)
     {
@@ -141,7 +148,8 @@ public class BuildDirectories
         NugetRootDir = nugetRootDir;
         TestDirs = testDirs;
         ToClean = toClean;
-        TestResults = testResults;
+        TestResultsDir = testResultsDir;
+        TestResultsCoverReportDir = testResultsCoverReportDir;
     }
 }
 
