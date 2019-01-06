@@ -111,7 +111,6 @@ Task("Build")
 });
 
 Task("Tests-With_Coverage")
-    .IsDependentOn("Build")
     .Does(() =>
 {
 	Action<ICakeContext> testAction = context =>
@@ -150,13 +149,69 @@ Task("Tests-With_Coverage")
                         .ExcludeByFile("*.Designer.cs;*.g.cs;*.g.i.cs"));
       ReportGenerator(parameters.Paths.Files.TestCoverageOutput, parameters.Paths.Directories.TestResultsCoverReportDir);
 });
+Task("Create-NuGet-Packages")
+    .Does(() =>
+    {                
+		var basePath = parameters.Paths.Directories.SrcRootDir.Combine(parameters.AppInfo.AppName)
+							.Combine("bin").
+							Combine(parameters.Configuration).
+							Combine(parameters.AppInfo.TargetFrameworkFull);
+		var fileSource = basePath.Combine($"{parameters.AppInfo.AppName}.dll");
+		var outputDirectory = parameters.Paths.Directories.NugetRootDir;
+		var nuspecDirectory = parameters.Paths.Directories.NuspecRootDir;
+		Information(fileSource.ToString());
+		Information(basePath.ToString());
+		Information(outputDirectory.ToString());
 
+  		var nuGetPackSettings   = new NuGetPackSettings {
+                                     Id                      = "AChehre.FluentlyHttpClient",
+                                     Version                 = parameters.Version.SemVersion,
+                                     Title                   = "Fluently HttpClient",
+                                     Authors                 = new[] {"Ahmad Chehreghani, Stephen Lautier"},
+                                     Owners                  = new[] {"Ahmad Chehreghani, Stephen Lautier"},
+                                     Description             = "Fluent Http Client with a fluent APIs which are intuitive, easy to use and also highly extensible.",
+                                     Summary                 = "Fluent Http Client with a fluent APIs which are intuitive, easy to use and also highly extensible.",
+                                     ProjectUrl              = new Uri("https://github.com/AChehre/FluentlyHttpClient"),
+                                     LicenseUrl              = new Uri("https://github.com/AChehre/FluentlyHttpClient/blob/master/LICENSE.md"),
+                                     Tags                    = new [] {"httpclient","fluentapi","fluenthttp","graphql","graphqlclient"},
+                                     RequireLicenseAcceptance= false,
+                                     Symbols                 = false,
+                                     NoPackageAnalysis       = true,
+                                     Files                   = new [] {
+                                                                          new NuSpecContent 
+																		  {
+																			  Source = fileSource.ToString(), 
+																			  Target = $@"lib\{parameters.AppInfo.TargetFrameworkFull}"
+																		  },
+                                                                       },
+                                     BasePath                = basePath.ToString(),
+                                     OutputDirectory         = outputDirectory.ToString()
+                                 };
 
+    //  var nuspecFiles = GetFiles($"{nuspecDirectory.ToString()}/*.nuspec");
+     NuGetPack(nuGetPackSettings);
+
+    });
+ Task("Push-Nuget-Packages")
+.Does(() =>
+{
+	var nugetFiles = System.IO.Directory.GetFiles(parameters.Paths.Directories.NugetRootDir.ToString(), "*.nupkg")
+										.Select(z => new FilePath(z)).ToList();
+	var settings = new NuGetPushSettings()
+	{
+		Source = parameters.NuGet.ApiUrl,
+		ApiKey = parameters.NuGet.ApiKey,
+	};
+
+	NuGetPush(nugetFiles, settings);
+});
 Task("Default")
-	.IsDependentOn("Clean")
-	.IsDependentOn("Restore")
-	.IsDependentOn("Build")
-	.IsDependentOn("Tests-With_Coverage");
+	//.IsDependentOn("Clean")
+	//.IsDependentOn("Restore")
+	//.IsDependentOn("Build")
+	//.IsDependentOn("Tests-With_Coverage")
+	.IsDependentOn("Create-NuGet-Packages");
+	//.IsDependentOn("Push-Nuget-Packages");
 
 RunTarget(parameters.Target);
 
