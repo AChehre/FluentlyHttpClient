@@ -16,7 +16,6 @@ branches:
     - refs/heads/master
     - refs/tags/*
     - master
-    - develop
 
 # clone_depth: 1
 build_script:
@@ -24,6 +23,3 @@ build_script:
 
 test: off
 
-cache:
-- tools -> build.cake
-- packages -> build.cake
