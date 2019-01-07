@@ -3,8 +3,8 @@
 [changeLog]: ./CHANGELOG.md
 
 # Fluently Http Client
-[![CircleCI](https://circleci.com/gh/sketch7/FluentlyHttpClient.svg?style=shield)](https://circleci.com/gh/sketch7/FluentlyHttpClient)
-[![NuGet version](https://badge.fury.io/nu/fluentlyhttpclient.svg)](https://badge.fury.io/nu/fluentlyhttpclient)
+[![Build status](https://ci.appveyor.com/api/projects/status/github/achehre/FluentlyHttpClient?branch=master&svg=true)](https://ci.appveyor.com/project/achehre/FluentlyHttpClient/branch/master)
+[![NuGet](https://img.shields.io/nuget/v/Achehre.FluentlyHttpClient.svg)](https://www.nuget.org/packages/Achehre.FluentlyHttpClient)
 
 Http Client for .NET Standard with fluent APIs which are intuitive, easy to use and also highly extensible.
 
@@ -31,13 +31,13 @@ NOTE: 1.x depends on .NET Standard 1.4+, use that if you need older .NET standar
 
 ### NuGet
 ```
-PM> Install-Package FluentlyHttpClient
+PM> Install-Package Achehre.FluentlyHttpClient
 ```
 
 ### csproj
 
 ```xml
-<PackageReference Include="FluentlyHttpClient" Version="*" />
+<PackageReference Include="Achehre.FluentlyHttpClient" Version="*" />
 ```
 
 ## Usage
