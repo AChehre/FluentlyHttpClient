@@ -46,8 +46,8 @@ public class BuildNuGet
     {
         var apiUrl = context.EnvironmentVariable("NUGET_API_URL");
         if(apiUrl == null) 
-        {
-            apiUrl = "https://api.nuget.org/v3/index.json";
+        {      
+             apiUrl = "https://api.nuget.org/v3/index.json";
         }
 
         var apiKey = context.EnvironmentVariable("NUGET_API_KEY");
@@ -56,7 +56,7 @@ public class BuildNuGet
 
     public override string ToString()
     {
-        return $"ApiUrl: {ApiUrl}\nApiKey: {ApiKey}";
+        return $"ApiUrl: {ApiUrl}";
     }
 
 }

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Description>Fluent Http Client with a fluent APIs which are intuitive, easy to use and also highly extensible.</Description>
-    <Product>Paran.FluentlyHttpClient</Product>
+    <Product>Achehre.FluentlyHttpClient</Product>
     <Company></Company>
     <Authors>Ahmad Chehreghani, Stephen Lautier</Authors>
     <PackageTags>httpclient fluentapi fluenthttp graphql graphqlclient</PackageTags>
@@ -15,6 +15,7 @@
     <LangVersion>7.1</LangVersion>
     <PackageId>Achehre.FluentlyHttpClient</PackageId>
     <DebugType>Full</DebugType>
+    <Version>2.1.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
