@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
+using FluentAssertions;
 using FluentlyHttpClient;
 using FluentlyHttpClient.Constants;
 using FluentlyHttpClient.Test;
@@ -14,6 +17,16 @@ namespace Test
 	public class RequestBuilder_WithUri
 	{
 		[Fact]
+		public void NullValue_ShouldThrow()
+		{
+			var requestBuilder = GetNewRequestBuilder();
+			Assert.Throws<ArgumentNullException>("args", () => requestBuilder.WithUri("{Language}/heroes", new
+			{
+				Language = (string) null
+			}));
+		}
+
+		[Fact]
 		public void ShouldInterpolate()
 		{
 			var request = GetNewRequestBuilder()
@@ -25,20 +38,26 @@ namespace Test
 
 			Assert.Equal("en/heroes/azmodan", request.Uri.ToString());
 		}
-
-		[Fact]
-		public void NullValue_ShouldThrow()
-		{
-			var requestBuilder = GetNewRequestBuilder();
-			Assert.Throws<ArgumentNullException>("args", () => requestBuilder.WithUri("{Language}/heroes", new
-			{
-				Language = (string)null
-			}));
-		}
 	}
 
 	public class RequestBuilder_WithQueryParams
 	{
+		[Theory]
+		[InlineData(null)]
+		[InlineData("")]
+		public void NullOrEmptyValue_RemainAsIs(string data)
+		{
+			var filter = data;
+			var builder = GetNewRequestBuilder();
+			var request = builder.WithUri("/org/sketch7")
+				.WithQueryParams(new
+				{
+					filter
+				}).Build();
+
+			Assert.Equal("/org/sketch7", request.Uri.ToString());
+		}
+
 		[Fact]
 		public void AddQuery()
 		{
@@ -62,23 +81,62 @@ namespace Test
 				{
 					Page = 1,
 					Filter = "all"
-				}, lowerCaseQueryKeys: false).Build();
+				}, false).Build();
 
 			Assert.Equal("/org/sketch7?Page=1&Filter=all", request.Uri.ToString());
 		}
 
-		[Theory]
-		[InlineData(null)]
-		[InlineData("")]
-		public void NullOrEmptyValue_RemainAsIs(string data)
+		[Fact]
+		public void AppendQuery()
 		{
-			string filter = data;
 			var builder = GetNewRequestBuilder();
-			var request = builder.WithUri("/org/sketch7")
+			var request = builder.WithUri("/org/sketch7?hero=rex")
 				.WithQueryParams(new
 				{
-					filter,
+					Page = 1,
+					Filter = "all"
 				}).Build();
+
+			Assert.Equal("/org/sketch7?hero=rex&page=1&filter=all", request.Uri.ToString());
+		}
+
+		[Fact]
+		public void CollectionQueryString()
+		{
+			var builder = GetNewRequestBuilder();
+			var request = builder.WithUri("/org/sketch7/heroes")
+				.WithQueryParams(new
+				{
+					Roles = new List<string> {"warrior", "assassin"},
+					Powers = new List<int> {1337, 2337}
+				}).Build();
+
+			Assert.Equal("/org/sketch7/heroes?roles=warrior&roles=assassin&powers=1337&powers=2337",
+				request.Uri.ToString());
+		}
+
+		[Fact]
+		public void CollectionQueryString_CommaSeperated()
+		{
+			var builder = GetNewRequestBuilder();
+			var request = builder.WithUri("/org/sketch7/heroes")
+				.WithQueryParams(new
+					{
+						Roles = new List<string> {"warrior", "assassin"}
+					},
+					opts => opts.CollectionMode = QueryStringCollectionMode.CommaSeparated
+				).Build();
+
+			Assert.Equal("/org/sketch7/heroes?roles=warrior,assassin", request.Uri.ToString());
+		}
+
+		[Fact]
+		public void EmptyObject_RemainAsIs()
+		{
+			var builder = GetNewRequestBuilder();
+			var request = builder.WithUri("/org/sketch7")
+				.WithQueryParams(new { })
+				.Build();
 
 			Assert.Equal("/org/sketch7", request.Uri.ToString());
 		}
@@ -97,64 +155,19 @@ namespace Test
 
 			Assert.Equal("/org/sketch7?page=1", request.Uri.ToString());
 		}
-
-		[Fact]
-		public void AppendQuery()
-		{
-			var builder = GetNewRequestBuilder();
-			var request = builder.WithUri("/org/sketch7?hero=rex")
-				.WithQueryParams(new
-				{
-					Page = 1,
-					Filter = "all"
-				}).Build();
-
-			Assert.Equal("/org/sketch7?hero=rex&page=1&filter=all", request.Uri.ToString());
-		}
-
-		[Fact]
-		public void EmptyObject_RemainAsIs()
-		{
-			var builder = GetNewRequestBuilder();
-			var request = builder.WithUri("/org/sketch7")
-				.WithQueryParams(new { })
-				.Build();
-
-			Assert.Equal("/org/sketch7", request.Uri.ToString());
-		}
-
-		[Fact]
-		public void CollectionQueryString()
-		{
-			var builder = GetNewRequestBuilder();
-			var request = builder.WithUri("/org/sketch7/heroes")
-				.WithQueryParams(new
-				{
-					Roles = new List<string> { "warrior", "assassin" },
-					Powers = new List<int> { 1337, 2337 }
-				}).Build();
-
-			Assert.Equal("/org/sketch7/heroes?roles=warrior&roles=assassin&powers=1337&powers=2337", request.Uri.ToString());
-		}
-
-		[Fact]
-		public void CollectionQueryString_CommaSeperated()
-		{
-			var builder = GetNewRequestBuilder();
-			var request = builder.WithUri("/org/sketch7/heroes")
-				.WithQueryParams(new
-				{
-					Roles = new List<string> { "warrior", "assassin" },
-				},
-				 opts => opts.CollectionMode = QueryStringCollectionMode.CommaSeparated
-				).Build();
-
-			Assert.Equal("/org/sketch7/heroes?roles=warrior,assassin", request.Uri.ToString());
-		}
 	}
 
 	public class RequestBuilder_BuildValidation
 	{
+		[Fact]
+		public void ThrowsErrorWhenGetAndHasBodySpecified()
+		{
+			var requestBuilder = GetNewRequestBuilder()
+				.AsGet()
+				.WithBody(new {Name = "Kaboom!"});
+			Assert.Throws<RequestValidationException>(() => requestBuilder.Build());
+		}
+
 		[Fact]
 		public void ThrowsErrorWhenMethodNotSpecified()
 		{
@@ -165,36 +178,13 @@ namespace Test
 		[Fact]
 		public void ThrowsErrorWhenUriNotSpecified()
 		{
-			var builder = GetNewRequestBuilder(uri: null);
+			var builder = GetNewRequestBuilder(null);
 			Assert.Throws<RequestValidationException>(() => builder.Build());
-		}
-
-		[Fact]
-		public void ThrowsErrorWhenGetAndHasBodySpecified()
-		{
-			var requestBuilder = GetNewRequestBuilder()
-				.AsGet()
-				.WithBody(new { Name = "Kaboom!" });
-			Assert.Throws<RequestValidationException>(() => requestBuilder.Build());
 		}
 	}
 
 	public class RequestBuilder_WithHeaders
 	{
-		[Fact]
-		public void AddHeader()
-		{
-			var builder = GetNewRequestBuilder()
-				.WithUri("/org/sketch7")
-				.WithHeader("chiko", "hex")
-				;
-			var request = builder.Build();
-
-			var header = request.Headers.GetValues("chiko").FirstOrDefault();
-			Assert.NotNull(header);
-			Assert.Equal("hex", header);
-		}
-
 		[Fact]
 		public void AddAlreadyExistsHeader_ShouldReplace()
 		{
@@ -208,6 +198,20 @@ namespace Test
 			var header = request.Headers.GetValues("chiko").FirstOrDefault();
 			Assert.NotNull(header);
 			Assert.Equal("hexII", header);
+		}
+
+		[Fact]
+		public void AddHeader()
+		{
+			var builder = GetNewRequestBuilder()
+					.WithUri("/org/sketch7")
+					.WithHeader("chiko", "hex")
+				;
+			var request = builder.Build();
+
+			var header = request.Headers.GetValues("chiko").FirstOrDefault();
+			Assert.NotNull(header);
+			Assert.Equal("hex", header);
 		}
 
 		[Fact]
@@ -249,7 +253,8 @@ namespace Test
 		[Fact]
 		public void WithUserAgent_WeirdButValid()
 		{
-			const string userAgent = "Mozilla/5.0 (Linux; Android 6.0; vivo 1601 Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/63.0.3239.111 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/153.0.0.53.88;]";
+			const string userAgent =
+				"Mozilla/5.0 (Linux; Android 6.0; vivo 1601 Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/63.0.3239.111 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/153.0.0.53.88;]";
 			var builder = GetNewRequestBuilder()
 					.WithUri("/org/sketch7")
 					.WithUserAgent(userAgent)
@@ -264,6 +269,72 @@ namespace Test
 
 	public class RequestBuilder_Return
 	{
+		public static byte[] ReadFully(Stream input)
+		{
+			var buffer = new byte[16 * 1024];
+			using (var ms = new MemoryStream())
+			{
+				int read;
+				while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+				{
+					ms.Write(buffer, 0, read);
+				}
+
+				return ms.ToArray();
+			}
+		}
+
+
+		[Fact]
+		public async void ReturnAsByteArray()
+		{
+			var mockResponse = "{ \"name\": \"Azmodan\" }";
+			var mockByteArray = Encoding.ASCII.GetBytes(mockResponse);
+			var mockResponseStream = new MemoryStream(mockByteArray);
+
+
+			var mockHttp = new MockHttpMessageHandler();
+			mockHttp.When("https://sketch7.com/api/heroes/azmodan")
+				.Respond(MimeTypes.Application.Json, mockResponseStream);
+
+			var fluentHttpClientFactory = GetNewClientFactory();
+			var clientBuilder = fluentHttpClientFactory.CreateBuilder("sketch7")
+				.WithBaseUrl("https://sketch7.com")
+				.WithMessageHandler(mockHttp);
+
+			var httpClient = fluentHttpClientFactory.Add(clientBuilder);
+			var response = await httpClient.CreateRequest("/api/heroes/azmodan")
+				.ReturnAsByteArray();
+
+			mockResponseStream.ToArray().Should().Equal(response);
+		}
+
+		[Fact]
+		public async void ReturnAsStream()
+		{
+			var mockResponse = "{ \"name\": \"Azmodan\" }";
+			var mockByteArray = Encoding.ASCII.GetBytes(mockResponse);
+			var mockResponseStream = new MemoryStream(mockByteArray);
+
+
+			var mockHttp = new MockHttpMessageHandler();
+			mockHttp.When("https://sketch7.com/api/heroes/azmodan")
+				.Respond(MimeTypes.Application.Json, mockResponseStream);
+
+			var fluentHttpClientFactory = GetNewClientFactory();
+			var clientBuilder = fluentHttpClientFactory.CreateBuilder("sketch7")
+				.WithBaseUrl("https://sketch7.com")
+				.WithMessageHandler(mockHttp);
+
+			var httpClient = fluentHttpClientFactory.Add(clientBuilder);
+			var response = await httpClient.CreateRequest("/api/heroes/azmodan")
+				.ReturnAsStream();
+
+
+			response.Should().NotBe(null);
+			mockResponseStream.ToArray().Should().Equal(ReadFully(response));
+		}
+
 		[Fact]
 		public async void ReturnAsString()
 		{
