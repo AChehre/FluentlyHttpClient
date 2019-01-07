@@ -1,0 +1,29 @@
+version: '{build}'
+image: Visual Studio 2017
+
+init:
+  - git config --global core.autocrlf true
+  
+pull_requests:
+  do_not_increment_build_number: true
+
+environment:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+branches:
+  only:
+    - refs/heads/master
+    - refs/tags/*
+    - master
+    - develop
+
+# clone_depth: 1
+build_script:
+  - ps: .\build.ps1 
+
+test: off
+
+cache:
+- tools -> build.cake
+- packages -> build.cake
