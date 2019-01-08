@@ -1,20 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace FluentlyHttpClient
 {
-
 	/// <summary>
-	/// FluentHttpResponse Extensions
+	///     FluentHttpResponse Extensions
 	/// </summary>
 	public static class FluentHttpResponseExtensions
 	{
 		/// <summary>
-		/// Read FluentHttpResponse as Stream
+		///     Read FluentHttpResponse as Stream
 		/// </summary>
 		/// <typeparam name="T">Response content type</typeparam>
 		/// <param name="response">T</param>
@@ -30,7 +26,7 @@ namespace FluentlyHttpClient
 		{
 			if (stream == null || stream.CanRead == false)
 			{
-				return default(T);
+				return default;
 			}
 
 			using (var sr = new StreamReader(stream))
@@ -41,19 +37,19 @@ namespace FluentlyHttpClient
 				return searchResult;
 			}
 		}
+
 		/// <summary>
-		///  Read FluentHttpResponse as String
+		///     Read FluentHttpResponse as String
 		/// </summary>
 		/// <param name="response">String content</param>
 		/// <returns></returns>
-
 		public static async Task<string> AsString(this FluentHttpResponse response)
 		{
 			return await response.Message.Content.ReadAsStringAsync().ConfigureAwait(false);
 		}
 
 		/// <summary>
-		///  Read FluentHttpResponse as ByteArray
+		///     Read FluentHttpResponse as ByteArray
 		/// </summary>
 		/// <param name="response">ByteArray content</param>
 		/// <returns></returns>
@@ -63,7 +59,7 @@ namespace FluentlyHttpClient
 		}
 
 		/// <summary>
-		///  Read FluentHttpResponse as Stream
+		///     Read FluentHttpResponse as Stream
 		/// </summary>
 		/// <param name="response">Stream content</param>
 		/// <returns></returns>

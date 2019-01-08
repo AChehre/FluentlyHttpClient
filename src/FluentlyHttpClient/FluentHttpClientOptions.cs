@@ -57,6 +57,12 @@ namespace FluentlyHttpClient
 		/// Gets or sets the default formatter to be used for content negotiation body format. e.g. JSON, XML, etc...
 		/// </summary>
 		public MediaTypeFormatter DefaultFormatter { get; set; }
+
+		/// <summary>
+		///     Determine whether has success status otherwise it will throw or not.
+		///		This property is overriding FluentHttpClients HasSuccessStatusOrThrow behavior.
+		/// </summary>
+		public bool HasSuccessStatusOrThrow { get; set; }
 	}
 
 	/// <summary>

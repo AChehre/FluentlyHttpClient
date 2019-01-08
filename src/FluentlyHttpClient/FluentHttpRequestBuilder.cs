@@ -45,7 +45,7 @@ namespace FluentlyHttpClient
 		private static readonly Regex InterpolationRegex = new Regex(@"\{(\w+)\}", RegexOptions.Compiled);
 		private static readonly Func<string, string> LowerCaseString = key => key.ToLower();
 		private object _queryParams;
-		private bool _hasSuccessStatusOrThrow;
+		private bool? _hasSuccessStatusOrThrow;
 		private CancellationToken _cancellationToken;
 		private QueryStringOptions _queryStringOptions;
 

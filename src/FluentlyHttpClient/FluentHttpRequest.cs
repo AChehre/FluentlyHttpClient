@@ -81,8 +81,9 @@ namespace FluentlyHttpClient
 
 		/// <summary>
 		///     Determine whether has success status otherwise it will throw or not.
+		///		This property is overriding FluentHttpClients HasSuccessStatusOrThrow behavior.
 		/// </summary>
-		public bool HasSuccessStatusOrThrow { get; set; }
+		public bool? HasSuccessStatusOrThrow { get; set; }
 
 		/// <summary>
 		///     Cancellation token to cancel operation.

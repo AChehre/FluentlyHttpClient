@@ -17,7 +17,6 @@ namespace FluentlyHttpClient
 		/// <returns>Returns task with the result data.</returns>
 		public static Task<T> Get<T>(this IFluentHttpClient client, string uri) => client.CreateRequest(uri)
 			.AsGet()
-			.WithSuccessStatus()
 			.Return<T>();
 
 		/// <summary>
@@ -32,7 +31,6 @@ namespace FluentlyHttpClient
 		public static Task<T> Post<T>(this IFluentHttpClient client, string uri, object data, MediaTypeHeaderValue contentType = null)
 			=> client.CreateRequest(uri)
 			.AsPost()
-			.WithSuccessStatus()
 			.WithBody(data, contentType)
 			.Return<T>();
 
@@ -48,7 +46,6 @@ namespace FluentlyHttpClient
 		public static Task<T> Put<T>(this IFluentHttpClient client, string uri, object data, MediaTypeHeaderValue contentType = null)
 			=> client.CreateRequest(uri)
 			.AsPut()
-			.WithSuccessStatus()
 			.WithBody(data, contentType)
 			.Return<T>();
 
@@ -64,7 +61,6 @@ namespace FluentlyHttpClient
 		public static Task<T> Patch<T>(this IFluentHttpClient client, string uri, object data, MediaTypeHeaderValue contentType = null)
 			=> client.CreateRequest(uri)
 			.AsPatch()
-			.WithSuccessStatus()
 			.WithBody(data, contentType)
 			.Return<T>();
 
@@ -80,7 +76,6 @@ namespace FluentlyHttpClient
 		public static Task<T> Delete<T>(this IFluentHttpClient client, string uri, object data, MediaTypeHeaderValue contentType = null) 
 			=> client.CreateRequest(uri)
 			.AsDelete()
-			.WithSuccessStatus()
 			.WithBody(data, contentType)
 			.Return<T>();
 

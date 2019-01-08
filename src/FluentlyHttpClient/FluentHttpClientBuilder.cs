@@ -23,6 +23,7 @@ namespace FluentlyHttpClient
 		private Action<FluentHttpRequestBuilder> _requestBuilderDefaults;
 		private HttpMessageHandler _httpMessageHandler;
 		private readonly FormatterOptions _formatterOptions = new FormatterOptions();
+		private bool _hasSuccessStatusOrThrow;
 
 		/// <summary>
 		/// Initializes a new instance.
@@ -139,6 +140,16 @@ namespace FluentlyHttpClient
 			return this;
 		}
 
+
+		/// <summary>Determine whether the status code should succeeds or else throw.</summary>
+		/// <param name="hasSuccessStatusOrThrow">When true status should succeed otherwise it will throw.</param>
+		/// <returns>Returns the request builder for chaining.</returns>
+		public FluentHttpClientBuilder WithSuccessStatus(bool hasSuccessStatusOrThrow = true)
+		{
+			_hasSuccessStatusOrThrow = hasSuccessStatusOrThrow;
+			return this;
+		}
+
 		/// <summary>
 		/// Build up HTTP client options.
 		/// </summary>
@@ -156,7 +167,8 @@ namespace FluentlyHttpClient
 				RequestBuilderDefaults = _requestBuilderDefaults,
 				HttpMessageHandler = _httpMessageHandler,
 				Formatters = _formatterOptions.Formatters,
-				DefaultFormatter = _formatterOptions.Default
+				DefaultFormatter = _formatterOptions.Default,
+				HasSuccessStatusOrThrow = _hasSuccessStatusOrThrow
 			};
 			return options;
 		}

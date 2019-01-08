@@ -1,6 +1,4 @@
-﻿using FluentlyHttpClient.Middleware;
-using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -9,73 +7,88 @@ using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using FluentlyHttpClient.Constants;
+using FluentlyHttpClient.Middleware;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentlyHttpClient
 {
 	/// <summary>
-	/// Interface for sending HTTP requests with a high level fluent API.
+	///     Interface for sending HTTP requests with a high level fluent API.
 	/// </summary>
 	public interface IFluentHttpClient : IDisposable
 	{
 		/// <summary>
-		/// Get the identifier (key) for this instance, which is registered with, within the factory.
+		///     Get the identifier (key) for this instance, which is registered with, within the factory.
 		/// </summary>
 		string Identifier { get; }
 
 		/// <summary>
-		/// Gets the base uri address for each request.
+		///     Gets the base uri address for each request.
 		/// </summary>
 		string BaseUrl { get; }
 
 		/// <summary>
-		/// Underlying HTTP client. This should be avoided from being used,
-		/// however if something is not exposed and its really needed, it can be used from here.
+		///     Underlying HTTP client. This should be avoided from being used,
+		///     however if something is not exposed and its really needed, it can be used from here.
 		/// </summary>
 		HttpClient RawHttpClient { get; }
 
 		/// <summary>
-		/// Formatters to be used for content negotiation for "Accept" and also sending formats. e.g. (JSON, XML)
+		///     Formatters to be used for content negotiation for "Accept" and also sending formats. e.g. (JSON, XML)
 		/// </summary>
 		MediaTypeFormatterCollection Formatters { get; }
 
 		/// <summary>
-		/// Gets the headers which should be sent with each request.
+		///     Gets the headers which should be sent with each request.
 		/// </summary>
 		HttpRequestHeaders Headers { get; }
 
 		/// <summary>
-		/// Gets the default formatter to be used when serializing body content. e.g. JSON, XML, etc...
+		///     Gets the default formatter to be used when serializing body content. e.g. JSON, XML, etc...
 		/// </summary>
 		MediaTypeFormatter DefaultFormatter { get; }
 
+		/// <summary>
+		///     Determine whether has success status otherwise it will throw or not.
+		///     This property is overriding FluentHttpClients HasSuccessStatusOrThrow behavior.
+		/// </summary>
+		bool HasSuccessStatusOrThrow { get; }
+
 		/// <summary>Get the formatter for an HTTP content type.</summary>
 		/// <param name="contentType">The HTTP content type (or <c>null</c> to automatically select one).</param>
-		/// <exception cref="InvalidOperationException">No MediaTypeFormatters are available on the API client for this content type.</exception>
+		/// <exception cref="InvalidOperationException">
+		///     No MediaTypeFormatters are available on the API client for this content
+		///     type.
+		/// </exception>
 		MediaTypeFormatter GetFormatter(MediaTypeHeaderValue contentType = null);
 
 		/// <summary>
-		/// Create a new request builder which can be configured fluently.
+		///     Create a new request builder which can be configured fluently.
 		/// </summary>
 		/// <param name="uriTemplate">Uri resource template e.g. <c>"/org/{id}"</c></param>
-		/// <param name="interpolationData">Data to interpolate within the Uri template place holders e.g. <c>{id}</c>. Can be either dictionary or object.</param>
+		/// <param name="interpolationData">
+		///     Data to interpolate within the Uri template place holders e.g. <c>{id}</c>. Can be
+		///     either dictionary or object.
+		/// </param>
 		/// <returns>Returns a new request builder.</returns>
 		FluentHttpRequestBuilder CreateRequest(string uriTemplate = null, object interpolationData = null);
 
 		/// <summary>
-		/// Build and send HTTP request.
+		///     Build and send HTTP request.
 		/// </summary>
 		/// <param name="builder">Request builder to build request from.</param>
 		/// <returns>Returns HTTP response.</returns>
 		Task<FluentHttpResponse> Send(FluentHttpRequestBuilder builder);
 
 		/// <summary>
-		/// Send HTTP request.
+		///     Send HTTP request.
 		/// </summary>
 		/// <param name="fluentRequest">HTTP fluent request to send.</param>
 		/// <returns>Returns HTTP response.</returns>
 		Task<FluentHttpResponse> Send(FluentHttpRequest fluentRequest);
+
 		/// <summary>
-		/// Send HTTP request.
+		///     Send HTTP request.
 		/// </summary>
 		/// <typeparam name="T">Return Type</typeparam>
 		/// <param name="fluentRequest">HTTP fluent request to send.</param>
@@ -84,39 +97,20 @@ namespace FluentlyHttpClient
 	}
 
 	/// <summary>
-	/// Provides a class for sending HTTP requests with a high level fluent API.
+	///     Provides a class for sending HTTP requests with a high level fluent API.
 	/// </summary>
 	[DebuggerDisplay("{DebuggerDisplay,nq}")]
 	public class FluentHttpClient : IFluentHttpClient
 	{
-		private string DebuggerDisplay => $"[{Identifier}] BaseUrl: '{BaseUrl}', MiddlewareCount: {_middleware.Count}";
-
-		/// <inheritdoc />
-		public string Identifier { get; }
-
-		/// <inheritdoc />
-		public string BaseUrl { get; }
-
-		/// <inheritdoc />
-		public HttpClient RawHttpClient { get; }
-
-		/// <inheritdoc />
-		public MediaTypeFormatterCollection Formatters { get; }
-
-		/// <inheritdoc />
-		public MediaTypeFormatter DefaultFormatter { get; }
-
-		/// <inheritdoc />
-		public HttpRequestHeaders Headers { get; }
+		private readonly IHttpClientFactory _httpClientFactory;
+		private readonly List<MiddlewareConfig> _middleware;
+		private readonly IFluentHttpMiddlewareRunner _middlewareRunner;
 
 		private readonly Action<FluentHttpRequestBuilder> _requestBuilderDefaults;
 		private readonly IServiceProvider _serviceProvider;
-		private readonly IFluentHttpMiddlewareRunner _middlewareRunner;
-		private readonly IHttpClientFactory _httpClientFactory;
-		private readonly List<MiddlewareConfig> _middleware;
 
 		/// <summary>
-		/// Initializes an instance of <see cref="FluentHttpClient"/>.
+		///     Initializes an instance of <see cref="FluentHttpClient" />.
 		/// </summary>
 		/// <param name="options"></param>
 		/// <param name="serviceProvider"></param>
@@ -144,17 +138,45 @@ namespace FluentlyHttpClient
 			Headers = RawHttpClient.DefaultRequestHeaders;
 		}
 
+		private string DebuggerDisplay => $"[{Identifier}] BaseUrl: '{BaseUrl}', MiddlewareCount: {_middleware.Count}";
+
+		/// <inheritdoc />
+		public string Identifier { get; }
+
+		/// <inheritdoc />
+		public string BaseUrl { get; }
+
+		/// <inheritdoc />
+		public HttpClient RawHttpClient { get; }
+
+		/// <inheritdoc />
+		public MediaTypeFormatterCollection Formatters { get; }
+
+		/// <inheritdoc />
+		public MediaTypeFormatter DefaultFormatter { get; }
+
+		/// <inheritdoc />
+		public HttpRequestHeaders Headers { get; }
+
+		/// <inheritdoc />
+		public bool HasSuccessStatusOrThrow { get; set; }
+
 		/// <inheritdoc />
 		public MediaTypeFormatter GetFormatter(MediaTypeHeaderValue contentType = null)
 		{
 			if (!Formatters.Any())
+			{
 				throw new InvalidOperationException("No media type formatters available.");
+			}
 
-			MediaTypeFormatter formatter = contentType != null
+			var formatter = contentType != null
 				? Formatters.FirstOrDefault(x => x.SupportedMediaTypes.Any(m => m.MediaType == contentType.MediaType))
 				: DefaultFormatter ?? Formatters.FirstOrDefault();
 			if (formatter == null)
-				throw new InvalidOperationException($"No media type formatters are available for '{contentType}' content-type.");
+			{
+				throw new InvalidOperationException(
+					$"No media type formatters are available for '{contentType}' content-type.");
+			}
 
 			return formatter;
 		}
@@ -170,12 +192,19 @@ namespace FluentlyHttpClient
 		}
 
 		/// <inheritdoc />
-		public Task<FluentHttpResponse> Send(FluentHttpRequestBuilder builder) => Send(builder.Build());
+		public Task<FluentHttpResponse> Send(FluentHttpRequestBuilder builder)
+		{
+			return Send(builder.Build());
+		}
 
 		/// <inheritdoc />
 		public async Task<FluentHttpResponse> Send(FluentHttpRequest fluentRequest)
 		{
-			if (fluentRequest == null) throw new ArgumentNullException(nameof(fluentRequest));
+			if (fluentRequest == null)
+			{
+				throw new ArgumentNullException(nameof(fluentRequest));
+			}
+
 			var response = await _middlewareRunner.Run(_middleware, fluentRequest, async request =>
 			{
 				var result = await RawHttpClient.SendAsync(request.Message, request.CancellationToken)
@@ -183,8 +212,16 @@ namespace FluentlyHttpClient
 				return ToFluentResponse(result, request.Items);
 			}).ConfigureAwait(false);
 
-			if (fluentRequest.HasSuccessStatusOrThrow)
+
+			if (HasSuccessStatusOrThrow && !fluentRequest.HasSuccessStatusOrThrow.HasValue)
+			{
 				response.EnsureSuccessStatusCode();
+			}
+
+			if (fluentRequest.HasSuccessStatusOrThrow.HasValue && fluentRequest.HasSuccessStatusOrThrow.Value)
+			{
+				response.EnsureSuccessStatusCode();
+			}
 
 			return response;
 		}
@@ -192,7 +229,11 @@ namespace FluentlyHttpClient
 		/// <inheritdoc />
 		public async Task<FluentHttpResponse<T>> SendAsync<T>(FluentHttpRequest fluentRequest)
 		{
-			if (fluentRequest == null) throw new ArgumentNullException(nameof(fluentRequest));
+			if (fluentRequest == null)
+			{
+				throw new ArgumentNullException(nameof(fluentRequest));
+			}
+
 			var response = await _middlewareRunner.Run(_middleware, fluentRequest, async request =>
 			{
 				var result = await RawHttpClient.SendAsync(request.Message, request.CancellationToken)
@@ -200,8 +241,15 @@ namespace FluentlyHttpClient
 				return ToFluentResponse(result, request.Items);
 			}).ConfigureAwait(false);
 
-			if (fluentRequest.HasSuccessStatusOrThrow)
+			if (HasSuccessStatusOrThrow && !fluentRequest.HasSuccessStatusOrThrow.HasValue)
+			{
 				response.EnsureSuccessStatusCode();
+			}
+
+			if (fluentRequest.HasSuccessStatusOrThrow.HasValue && fluentRequest.HasSuccessStatusOrThrow.Value)
+			{
+				response.EnsureSuccessStatusCode();
+			}
 
 
 			if (!response.IsSuccessStatusCode)
@@ -213,22 +261,6 @@ namespace FluentlyHttpClient
 			{
 				Data = await response.As<T>()
 			};
-
-		}
-
-		private HttpClient Configure(FluentHttpClientOptions options)
-		{
-			var httpClient = options.HttpMessageHandler == null
-			 ? _httpClientFactory.CreateClient(options.Identifier)
-			 : new HttpClient(options.HttpMessageHandler);
-			httpClient.BaseAddress = new Uri(options.BaseUrl);
-			httpClient.DefaultRequestHeaders.Add(HeaderTypes.Accept, Formatters.SelectMany(x => x.SupportedMediaTypes).Select(x => x.MediaType));
-			httpClient.Timeout = options.Timeout;
-
-			foreach (var headerEntry in options.Headers)
-				httpClient.DefaultRequestHeaders.Add(headerEntry.Key, headerEntry.Value);
-
-			return httpClient;
 		}
 
 		/// <inheritdoc />
@@ -237,8 +269,28 @@ namespace FluentlyHttpClient
 			RawHttpClient?.Dispose();
 		}
 
-		private static FluentHttpResponse ToFluentResponse(HttpResponseMessage response, IDictionary<object, object> items)
-			=> new FluentHttpResponse(response, items);
+		private HttpClient Configure(FluentHttpClientOptions options)
+		{
+			var httpClient = options.HttpMessageHandler == null
+				? _httpClientFactory.CreateClient(options.Identifier)
+				: new HttpClient(options.HttpMessageHandler);
+			httpClient.BaseAddress = new Uri(options.BaseUrl);
+			httpClient.DefaultRequestHeaders.Add(HeaderTypes.Accept,
+				Formatters.SelectMany(x => x.SupportedMediaTypes).Select(x => x.MediaType));
+			httpClient.Timeout = options.Timeout;
 
+			foreach (var headerEntry in options.Headers)
+			{
+				httpClient.DefaultRequestHeaders.Add(headerEntry.Key, headerEntry.Value);
+			}
+
+			return httpClient;
+		}
+
+		private static FluentHttpResponse ToFluentResponse(HttpResponseMessage response,
+			IDictionary<object, object> items)
+		{
+			return new FluentHttpResponse(response, items);
+		}
 	}
 }
