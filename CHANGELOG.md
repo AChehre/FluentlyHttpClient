@@ -3,6 +3,17 @@
 [*vNext*](https://github.com/sketch7/FluentlyHttpClient/compare/2.1.1...2.2.0) (201X-X-X)
 
 
+
+## [2.1.4](https://github.com/sketch7/FluentlyHttpClient/compare/2.1.2...2.1.4) (2019-01-08)
+### Build
+ - CakeBuild added.
+ - Build server changed to Appveyor
+ 
+### Features
+ - `SendAsync<T>` method added to `FluentHttpClient`
+ - `As<T>` extension method added to `FluentHttpResponse`
+ - Mime types as constants added.
+
 ## [2.1.2](https://github.com/sketch7/FluentlyHttpClient/compare/2.1.1...2.1.2) (2018-10-24)
 
 ### Chore
