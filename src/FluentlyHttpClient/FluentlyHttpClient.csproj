@@ -15,7 +15,7 @@
     <LangVersion>latest</LangVersion>
     <PackageId>Achehre.FluentlyHttpClient</PackageId>
     <DebugType>Full</DebugType>
-    <Version>2.1.4</Version>
+    <Version>2.10.5</Version>
   </PropertyGroup>
 
   <ItemGroup>
