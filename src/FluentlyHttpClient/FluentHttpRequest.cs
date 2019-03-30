@@ -107,10 +107,11 @@ namespace FluentlyHttpClient
 		/// <summary>
 		///     Gets readable request info as string.
 		/// </summary>
-		public FluentHttpRequest(FluentHttpRequestBuilder builder, HttpRequestMessage message, IDictionary<object, object> items = null)
+		public FluentHttpRequest(FluentHttpRequestBuilder builder, IFluentHttpClient fluentHttpClient, HttpRequestMessage message, IDictionary<object, object> items = null)
 		{
 			Message = message;
 			Builder = builder;
+			FluentHttpClient = fluentHttpClient;
 			Items = items == null
 				? new Dictionary<object, object>()
 				: new Dictionary<object, object>(items);

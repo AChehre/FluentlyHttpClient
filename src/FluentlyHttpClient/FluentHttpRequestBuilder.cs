@@ -323,7 +323,7 @@ namespace FluentlyHttpClient
 				}
 			}
 
-			return new FluentHttpRequest(this, httpRequest, Items)
+			return new FluentHttpRequest(this, _fluentHttpClient, httpRequest, Items)
 			{
 				HasSuccessStatusOrThrow = _hasSuccessStatusOrThrow,
 				CancellationToken = _cancellationToken,
