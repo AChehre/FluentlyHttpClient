@@ -2,6 +2,7 @@
 using MessagePack.Resolvers;
 using Sketch7.MessagePack.MediaTypeFormatter;
 using Xunit;
+using static FluentlyHttpClient.Test.ServiceTestUtil;
 
 namespace FluentlyHttpClient.Test.Integration
 {
@@ -12,16 +13,15 @@ namespace FluentlyHttpClient.Test.Integration
 		// [Fact]
 		public async void ShouldMakeRequest_Get()
 		{
-			var fluentHttpClientFactory = ServiceTestUtil.GetNewClientFactory();
-			var clientBuilder = fluentHttpClientFactory.CreateBuilder("sketch7")
+			var httpClient = GetNewClientFactory().CreateBuilder("sketch7")
 				.WithBaseUrl("http://localhost:5001")
-					.UseTimer()
+				.UseTimer()
 				.ConfigureFormatters(opts =>
 				{
 					opts.Default = _messagePackMediaTypeFormatter;
 				})
-			;
-			var httpClient = fluentHttpClientFactory.Add(clientBuilder);
+				.Build();
+
 			var response = await httpClient.CreateRequest("/api/heroes/azmodan")
 				.ReturnAsResponse<Hero>();
 
@@ -34,28 +34,27 @@ namespace FluentlyHttpClient.Test.Integration
 		// [Fact]
 		public async void ShouldMakeRequest_Post()
 		{
-			var fluentHttpClientFactory = ServiceTestUtil.GetNewClientFactory();
-			var clientBuilder = fluentHttpClientFactory.CreateBuilder("sketch7")
+			var httpClient = GetNewClientFactory().CreateBuilder("sketch7")
 				.WithBaseUrl("http://localhost:5001")
 				.ConfigureFormatters(opts =>
 					{
 						opts.Default = _messagePackMediaTypeFormatter;
 					})
-				;
-			var httpClient = fluentHttpClientFactory.Add(clientBuilder);
+				.Build();
+
 			var response = await httpClient.CreateRequest("/api/heroes")
 				.AsPost()
 				.WithBody(new Hero
 				{
 					Key = "valeera",
 					Name = "Valeera",
-					Title = "Shadow of the Ucrowned"
+					Title = "Shadow of the Uncrowned"
 				})
 				.ReturnAsResponse<Hero>();
 			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 			Assert.Equal("valeera", response.Data.Key);
 			Assert.Equal("Valeera", response.Data.Name);
-			Assert.Equal("Shadow of the Ucrowned", response.Data.Title);
+			Assert.Equal("Shadow of the Uncrowned", response.Data.Title);
 		}
 	}
 }

@@ -12,18 +12,19 @@
     <RepositoryUrl>https://github.com/AChehre/FluentlyHttpClient.git</RepositoryUrl>
     <PackageProjectUrl>https://github.com/AChehre/FluentlyHttpClient</PackageProjectUrl>
     <PackageIconUrl></PackageIconUrl>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>latest</LangVersion>
     <PackageId>Achehre.FluentlyHttpClient</PackageId>
     <DebugType>Full</DebugType>
     <Version>2.1.4</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="5.5.3" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.6" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
   </ItemGroup>
+
 
 </Project>

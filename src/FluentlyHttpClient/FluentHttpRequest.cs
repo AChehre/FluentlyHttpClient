@@ -57,7 +57,12 @@ namespace FluentlyHttpClient
 		public HttpRequestMessage Message { get; }
 
 		/// <summary>
-		///     Gets or sets the <see cref="HttpMethod" /> for the HTTP request.
+		/// Gets the request builder which is responsible for this request message.
+		/// </summary>
+		public FluentHttpRequestBuilder Builder { get; }
+
+		/// <summary>
+		/// Gets or sets the <see cref="HttpMethod"/> for the HTTP request.
 		/// </summary>
 		public HttpMethod Method
 		{
@@ -102,9 +107,13 @@ namespace FluentlyHttpClient
 		/// <summary>
 		///     Gets readable request info as string.
 		/// </summary>
-		public override string ToString()
+		public FluentHttpRequest(FluentHttpRequestBuilder builder, HttpRequestMessage message, IDictionary<object, object> items = null)
 		{
-			return $"{DebuggerDisplay}";
+			Message = message;
+			Builder = builder;
+			Items = items == null
+				? new Dictionary<object, object>()
+				: new Dictionary<object, object>(items);
 		}
 	}
 }

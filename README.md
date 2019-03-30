@@ -17,7 +17,7 @@ Http Client for .NET Standard with fluent APIs which are intuitive, easy to use 
  - Highly extensible
  - Middleware Support
    - Custom Classes with DI enabled
-   - Access to both Request/Response within same scope (similar to MVC middleware)
+   - Access to both Request/Response within same scope (similar to ASPNET middleware)
    - Logger and Timer middleware out of the box
  - Multiple HttpClient support with a Fluent API for Client builder
  - Customizable Formatters (JSON, XML out of the box)
@@ -143,6 +143,18 @@ fluentHttpClientFactory.CreateBuilder("platform")
     .Register();
 ```
 
+#### Create Http Client from Client
+Its also possible to create a new http client from an http client, sort of sub-client which inherits options from its creator.
+This might be good to pass defaults for a specific endpoint.
+
+```cs
+var httpClient = factory.Get("platform");
+var paymentsClient = httpClient.CreateClient("payments")
+  .WithHeader("X-Gateway", "xxx")
+  .WithTimeout(30)
+  .Build();
+```
+
 #### Configure defaults for Http Clients
 Its also possible to configure builder defaults for all http clients via `ConfigureDefaults` within `IFluentHttpClientFactory`.
 See example below.
@@ -183,6 +195,7 @@ public static class FluentHttpClientFactoryExtensions
         => factory.Get("platform");
 }
 ```
+
 
 ### Request Builder
 Request builder is used to build http requests in a fluent way.
@@ -236,6 +249,7 @@ FluentHttpResponse<Hero> response = requestBuilder.ReturnAsResponse<Hero>();
 Hero hero = requestBuilder.Return<Hero>();
 ```
 
+
 ### GraphQL
 FluentlyHttpClient :heart: GraphQL. First class support for GraphQL to be able to create request/response even simpler.
 
@@ -250,11 +264,12 @@ FluentHttpResponse<Hero> response =
     // => response.Data.Title
 ```
 
+
 ### Middleware
-Middlewares are used to intercept request/response to add additional logic or alter request/response.
+Middleware's are used to intercept request/response to add additional logic or alter request/response.
 
 Implementing a middleware for the HTTP client is quite straight forward, and it's very similar to
-ASP.NET Core MVC middleware.
+ASP.NET Core middleware.
 
 These are provided out of the box:
 
@@ -264,31 +279,37 @@ These are provided out of the box:
 | Logger     | Log request/response.                         |
 
 Two important points to keep in mind:
- - The first argument within constructor has to be `FluentHttpRequestDelegate` which is generally called `next`.
- - During `Invoke` the `await _next(request);` must be invoked and return the response, in order to continue the flow.
+ - The first argument within constructor has to be `FluentHttpMiddlewareDelegate` which is generally called `next`.
+ - The second argument within constructor has to be `FluentHttpMiddlewareClientContext` which is generally called `context`,
+ - During `Invoke` the `await _next(context);` must be invoked and return the response, in order to continue the flow.
 
  The following is the timer middleware implementation *(bit simplified)*.
 
 ```cs
 public class TimerHttpMiddleware : IFluentHttpMiddleware
 {
-    private readonly FluentHttpRequestDelegate _next;
+    private readonly FluentHttpMiddlewareDelegate _next;
     private readonly TimerHttpMiddlewareOptions _options;
     private readonly ILogger _logger;
 
-    public TimerHttpMiddleware(FluentHttpRequestDelegate next, TimerHttpMiddlewareOptions options, ILogger<TimerHttpMiddleware> logger)
+    public TimerHttpMiddleware(
+      FluentHttpMiddlewareDelegate next, // this needs to be here and should be first
+      FluentHttpMiddlewareClientContext context, // this needs to be here and should be second
+      TimerHttpMiddlewareOptions options,
+      ILoggerFactory loggerFactory
+    )
     {
         _next = next;
         _options = options;
-        _logger = logger;
+        _logger = loggerFactory.CreateLogger($"{typeof(TimerHttpMiddleware).Namespace}.{context.Identifier}.Timer");
     }
 
-    public async Task<FluentHttpResponse> Invoke(FluentHttpRequest request)
+    public async Task<FluentHttpResponse> Invoke(FluentHttpMiddlewareContext context)
     {
         var watch = Stopwatch.StartNew();
-        var response = await _next(request); // this needs to be done to continue middleware flow
+        var response = await _next(context); // this needs to be invoked to continue middleware flow
         var elapsed = watch.Elapsed;
-        _logger.LogInformation("Executed request {request} in {timeTakenMillis}ms", request, elapsed.TotalMilliseconds);
+        _logger.LogInformation("Executed request {request} in {timeTakenMillis}ms", context.Request, elapsed.TotalMilliseconds);
         response.SetTimeTaken(elapsed);
         return response;
     }
@@ -324,8 +345,12 @@ TimeSpan timeTaken = response.GetTimeTaken();
 Options to middleware can be passed via an argument. Note it has to be the second argument within the constructor.
 
 ```cs
-                                                                       V - Options
-public TimerHttpMiddleware(FluentHttpRequestDelegate next, TimerHttpMiddlewareOptions options, ILogger<TimerHttpMiddleware> logger)
+public TimerHttpMiddleware(
+  FluentHttpMiddlewareDelegate next,
+  FluentHttpMiddlewareClientContext context,
+  TimerHttpMiddlewareOptions options, // <- options should be here
+  ILoggerFactory loggerFactory
+)
 ```
 
 Options can be passed when registering a middleware.
@@ -437,13 +462,12 @@ public async void ShouldReturnContent()
     mockHttp.When("https://sketch7.com/api/heroes/azmodan")
       .Respond("application/json", "{ 'name': 'Azmodan' }");
 
-    fluentHttpClientFactory.CreateBuilder("platform")
+    var httpClient = fluentHttpClientFactory.CreateBuilder("platform")
       .WithBaseUrl("https://sketch7.com")
       .AddMiddleware<TimerHttpMiddleware>()
       .WithMessageHandler(mockHttp) // set message handler to mock
-      .Register();
+      .Build();
 
-    var httpClient = fluentHttpClientFactory.Get("platform");
     var response = await httpClient.CreateRequest("/api/heroes/azmodan")
       .ReturnAsResponse<Hero>();
 

@@ -74,18 +74,25 @@ namespace FluentlyHttpClient
 		FluentHttpRequestBuilder CreateRequest(string uriTemplate = null, object interpolationData = null);
 
 		/// <summary>
+		///     Creates a new client and inherit options from the current.
+		/// </summary>
+		/// <param name="identifier">New identifier name</param>
+		/// <returns>Returns a new client builder instance.</returns>
+		FluentHttpClientBuilder CreateClient(string identifier);
+
+		/// <summary>
 		///     Build and send HTTP request.
 		/// </summary>
 		/// <param name="builder">Request builder to build request from.</param>
 		/// <returns>Returns HTTP response.</returns>
 		Task<FluentHttpResponse> Send(FluentHttpRequestBuilder builder);
 
-		/// <summary>
-		///     Send HTTP request.
-		/// </summary>
-		/// <param name="fluentRequest">HTTP fluent request to send.</param>
-		/// <returns>Returns HTTP response.</returns>
-		Task<FluentHttpResponse> Send(FluentHttpRequest fluentRequest);
+        /// <summary>
+        ///     Send HTTP request.
+        /// </summary>
+        /// <param name="fluentRequest">HTTP fluent request to send.</param>
+        /// <returns>Returns HTTP response.</returns>
+        Task<FluentHttpResponse> Send(FluentHttpRequest fluentRequest);
 
 		/// <summary>
 		///     Send HTTP request.
@@ -102,9 +109,11 @@ namespace FluentlyHttpClient
 	[DebuggerDisplay("{DebuggerDisplay,nq}")]
 	public class FluentHttpClient : IFluentHttpClient
 	{
+		private readonly IFluentHttpClientFactory _clientFactory;
 		private readonly IHttpClientFactory _httpClientFactory;
-		private readonly List<MiddlewareConfig> _middleware;
+		private readonly FluentHttpMiddlewareBuilder _middlewareBuilder;
 		private readonly IFluentHttpMiddlewareRunner _middlewareRunner;
+		private readonly FluentHttpClientOptions _options;
 
 		private readonly Action<FluentHttpRequestBuilder> _requestBuilderDefaults;
 		private readonly IServiceProvider _serviceProvider;
@@ -113,21 +122,22 @@ namespace FluentlyHttpClient
 		///     Initializes an instance of <see cref="FluentHttpClient" />.
 		/// </summary>
 		/// <param name="options"></param>
+		/// <param name="clientFactory"></param>
 		/// <param name="serviceProvider"></param>
-		/// <param name="middlewareRunner"></param>
 		/// <param name="httpClientFactory"></param>
 		public FluentHttpClient(
 			FluentHttpClientOptions options,
+			IFluentHttpClientFactory clientFactory,
 			IServiceProvider serviceProvider,
-			IFluentHttpMiddlewareRunner middlewareRunner,
 			IHttpClientFactory httpClientFactory
 		)
 		{
+			_options = options;
+			_clientFactory = clientFactory;
 			_serviceProvider = serviceProvider;
-			_middlewareRunner = middlewareRunner;
 			_httpClientFactory = httpClientFactory;
-			_middleware = options.Middleware;
 			_requestBuilderDefaults = options.RequestBuilderDefaults;
+			_middlewareBuilder = options.MiddlewareBuilder;
 
 			Identifier = options.Identifier;
 			BaseUrl = options.BaseUrl;
@@ -136,9 +146,13 @@ namespace FluentlyHttpClient
 
 			RawHttpClient = Configure(options);
 			Headers = RawHttpClient.DefaultRequestHeaders;
+
+			_middlewareRunner = options.MiddlewareBuilder.Build(this);
 		}
 
-		private string DebuggerDisplay => $"[{Identifier}] BaseUrl: '{BaseUrl}', MiddlewareCount: {_middleware.Count}";
+		private string DebuggerDisplay =>
+			$"[{Identifier}] BaseUrl: '{BaseUrl}', MiddlewareCount: {_middlewareBuilder.Count}";
+
 
 		/// <inheritdoc />
 		public string Identifier { get; }
@@ -164,19 +178,14 @@ namespace FluentlyHttpClient
 		/// <inheritdoc />
 		public MediaTypeFormatter GetFormatter(MediaTypeHeaderValue contentType = null)
 		{
-			if (!Formatters.Any())
-			{
-				throw new InvalidOperationException("No media type formatters available.");
-			}
+			if (!Formatters.Any()) throw new InvalidOperationException("No media type formatters available.");
 
 			var formatter = contentType != null
 				? Formatters.FirstOrDefault(x => x.SupportedMediaTypes.Any(m => m.MediaType == contentType.MediaType))
 				: DefaultFormatter ?? Formatters.FirstOrDefault();
 			if (formatter == null)
-			{
 				throw new InvalidOperationException(
 					$"No media type formatters are available for '{contentType}' content-type.");
-			}
 
 			return formatter;
 		}
@@ -191,6 +200,7 @@ namespace FluentlyHttpClient
 				: builder;
 		}
 
+
 		/// <inheritdoc />
 		public Task<FluentHttpResponse> Send(FluentHttpRequestBuilder builder)
 		{
@@ -198,14 +208,11 @@ namespace FluentlyHttpClient
 		}
 
 		/// <inheritdoc />
-		public async Task<FluentHttpResponse> Send(FluentHttpRequest fluentRequest)
+		public async Task<FluentHttpResponse> Send(FluentHttpRequest request)
 		{
-			if (fluentRequest == null)
-			{
-				throw new ArgumentNullException(nameof(fluentRequest));
-			}
+			if (request == null) throw new ArgumentNullException(nameof(request));
 
-			var response = await _middlewareRunner.Run(_middleware, fluentRequest, async request =>
+			var response = await _middlewareRunner.Run(request, async () =>
 			{
 				var result = await RawHttpClient.SendAsync(request.Message, request.CancellationToken)
 					.ConfigureAwait(false);
@@ -213,54 +220,48 @@ namespace FluentlyHttpClient
 			}).ConfigureAwait(false);
 
 
-			if (HasSuccessStatusOrThrow && !fluentRequest.HasSuccessStatusOrThrow.HasValue)
-			{
+			if (HasSuccessStatusOrThrow && !request.HasSuccessStatusOrThrow.HasValue)
 				response.EnsureSuccessStatusCode();
-			}
 
-			if (fluentRequest.HasSuccessStatusOrThrow.HasValue && fluentRequest.HasSuccessStatusOrThrow.Value)
-			{
+			if (request.HasSuccessStatusOrThrow.HasValue && request.HasSuccessStatusOrThrow.Value)
 				response.EnsureSuccessStatusCode();
-			}
 
 			return response;
 		}
 
 		/// <inheritdoc />
-		public async Task<FluentHttpResponse<T>> SendAsync<T>(FluentHttpRequest fluentRequest)
+		public async Task<FluentHttpResponse<T>> SendAsync<T>(FluentHttpRequest request)
 		{
-			if (fluentRequest == null)
-			{
-				throw new ArgumentNullException(nameof(fluentRequest));
-			}
+			if (request == null) throw new ArgumentNullException(nameof(request));
 
-			var response = await _middlewareRunner.Run(_middleware, fluentRequest, async request =>
+			var response = await _middlewareRunner.Run(request, async () =>
 			{
 				var result = await RawHttpClient.SendAsync(request.Message, request.CancellationToken)
 					.ConfigureAwait(false);
 				return ToFluentResponse(result, request.Items);
 			}).ConfigureAwait(false);
 
-			if (HasSuccessStatusOrThrow && !fluentRequest.HasSuccessStatusOrThrow.HasValue)
-			{
+			if (HasSuccessStatusOrThrow && !request.HasSuccessStatusOrThrow.HasValue)
 				response.EnsureSuccessStatusCode();
-			}
 
-			if (fluentRequest.HasSuccessStatusOrThrow.HasValue && fluentRequest.HasSuccessStatusOrThrow.Value)
-			{
+			if (request.HasSuccessStatusOrThrow.HasValue && request.HasSuccessStatusOrThrow.Value)
 				response.EnsureSuccessStatusCode();
-			}
 
 
-			if (!response.IsSuccessStatusCode)
-			{
-				return new FluentHttpResponse<T>(response);
-			}
+			if (!response.IsSuccessStatusCode) return new FluentHttpResponse<T>(response);
 
 			return new FluentHttpResponse<T>(response)
 			{
 				Data = await response.As<T>()
 			};
+		}
+
+
+		/// <inheritdoc />
+		public FluentHttpClientBuilder CreateClient(string identifier)
+		{
+			return _clientFactory.CreateBuilder(identifier)
+				.FromOptions(_options);
 		}
 
 		/// <inheritdoc />
@@ -279,10 +280,7 @@ namespace FluentlyHttpClient
 				Formatters.SelectMany(x => x.SupportedMediaTypes).Select(x => x.MediaType));
 			httpClient.Timeout = options.Timeout;
 
-			foreach (var headerEntry in options.Headers)
-			{
-				httpClient.DefaultRequestHeaders.Add(headerEntry.Key, headerEntry.Value);
-			}
+			httpClient.DefaultRequestHeaders.AddRange(options.Headers);
 
 			return httpClient;
 		}

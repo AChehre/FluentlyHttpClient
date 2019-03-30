@@ -1,6 +1,52 @@
 # Fluently Http Changelog
 
-[*vNext*](https://github.com/sketch7/FluentlyHttpClient/compare/2.1.1...2.2.0) (201X-X-X)
+[*vNext*](https://github.com/sketch7/FluentlyHttpClient/compare/3.0.0...3.1.0) (201X-X-X)
+
+
+## [3.0.0](https://github.com/sketch7/FluentlyHttpClient/compare/2.2.0...3.0.0) (2019-03-X)
+
+Middleware has been reworked, its now much more efficient as it creates instances per middleware per client, instead of every request.
+
+### Features
+- **middleware:** middleware has been reworked, and now are much more efficient
+- **middleware:** middleware now logs the identifier in source e.g. `FluentlyHttpClient.Middleware.sketch7.Timer`, given HttpClient identifier was `sketch7`,
+so logs can be more fine controlled
+- **headers:** add `FluentHttpHeaders` since `HttpHeaders` (and all implementations) cannot create instances of, and changed all implementations to use it instead of `Dictionary<string, string>`.
+- **util:** add several extensions when working with `HttpHeaders`
+- **http request:** now exposes the request builder
+- **http request:** add request hash `FluentHttpRequest.GetHash`, `FluentHttpRequestBuilder.WithRequestHashOptions` which can be used to build an id hash for the request
+
+### BREAKING CHANGES
+- **middleware:** `FluentHttpRequestDelegate` has been removed in favor of `FluentHttpMiddlewareDelegate`
+- **middleware:** `IFluentHttpMiddlewareRunner` and `FluentHttpMiddlewareRunner` has been reworked
+- **middleware:** `IFluentHttpMiddleware` changed from `Invoke(FluentHttpRequest)` to `Invoke(FluentHttpMiddlewareContext)`
+- **middleware:** renamed `MiddlewareConfig` to `FluentHttpMiddlewareConfig` for consistency
+- **http client builder:** `FluentHttpClientOptions` changed `List<MiddlewareConfig> Middleware` to `FluentHttpMiddlewareBuilder MiddlewareBuilder`
+- **http client factory:** removed `Add(FluentHttpClientOptions)` from `IFluentHttpClientFactory` and moved it as an extension method
+- **exceptions:** exceptions has been moved correctly to `FluentlyHttpClient` namespace
+- **util:** querystrings now defaults to camel casing instead of lower casing
+- **request builder:** `FluentHttpRequestBuilder.WithQueryParams(object, bool)` has been removed
+- **request builder:** change headers from `Dictionary<string, string>` to `FluentHttpHeaders`
+- **http client builder:** change options headers from `Dictionary<string, string>` to `FluentHttpHeaders`
+
+See [these changes](https://github.com/sketch7/FluentlyHttpClient/pull/25/files#diff-efc205ab9587ec42db3de44d14c0ce86) 
+in order to help you update an existing middleware to the new version (fear not, changes are minimal :)).
+
+
+## [2.2.0](https://github.com/sketch7/FluentlyHttpClient/compare/2.1.2...2.2.0) (2019-03-03)
+
+- **http client:** now able to create a new http client from an existing one and inheriting options with `CreateClient`
+- **http client builder:** add `FromOptions` which gets configured via `FluentHttpClientOptions`
+- **http client builder:** rename `Build` to `BuildOptions` and `Build` now returns the http client
+- **http client builder:** `WithRequestBuilderDefaults` now will combine previous defaults instead of replacing them.
+If you want to replace the previous defaults (as it was working), use `WithRequestBuilderDefaults(..., replace: true)`.
+This behavior is changed because its more expected that they are combined, especially when creating a sub-client and adding/changing request defaults would loose the previous defaults from the creator (parent).
+- **http client factory:** add overload `Add(IFluentHttpClient)`
+
+### BREAKING CHANGES
+
+- **http client builder:** `Build` has been renamed to `BuildOptions` and add `Build` which now returns an Http Client.
+*Most probably it won't affect anyone since its more for internal use*
 
 
 ## [2.1.2](https://github.com/sketch7/FluentlyHttpClient/compare/2.1.1...2.1.2) (2018-10-24)
@@ -40,13 +86,14 @@ clientBuilder.WithRequestBuilderDefaults(builder =>
 
 ### Deprecated code
 
- - **request builder:** `WithQueryParams(object queryParams, bool lowerCaseQueryKeys)` has been marked as obsolete, instead the newly `WithQueryParams(object queryParams, Action<QueryStringOptions> configure)`.
+- **request builder:** `WithQueryParams(object queryParams, bool lowerCaseQueryKeys)` has been marked as obsolete, instead the newly `WithQueryParams(object queryParams, Action<QueryStringOptions> configure)`.
   e.g. `WithQueryParams(params, opts => opts.KeyFormatter = key => key.ToLower())`
+
 
 ## [2.0.1](https://github.com/sketch7/FluentlyHttpClient/compare/2.0.0...2.0.1) (2018-07-31)
 
 ### Bug Fixes
- - **querystring builder:** fix issue with query string when have multiple values.
+- **querystring builder:** fix issue with query string when have multiple values.
 
 
 ## [2.0.0](https://github.com/sketch7/FluentlyHttpClient/compare/1.4.5...2.0.0) (2018-06-24)
@@ -64,7 +111,7 @@ clientBuilder.WithRequestBuilderDefaults(builder =>
 - **logger middleware:** add `UseLogging(this FluentHttpClientBuilder builder, Action<LoggerHttpMiddlewareOptions> configure = null)` overload.
 
 ### Changes
- - **timer middleware:** increase warning threshold to `400`ms by default.
+- **timer middleware:** increase warning threshold to `400`ms by default.
 
 ### BREAKING CHANGES
 - Removed deprecated code
@@ -74,52 +121,52 @@ clientBuilder.WithRequestBuilderDefaults(builder =>
 ## [1.4.4](https://github.com/sketch7/FluentlyHttpClient/compare/1.4.3...1.4.4) (2018-06-11)
 
 ### Bug Fixes
- - **request builder:** fix issue with query string `.WithQueryParams` when value is empty string.
+- **request builder:** fix issue with query string `.WithQueryParams` when value is empty string.
 
 
 ## [1.4.3](https://github.com/sketch7/FluentlyHttpClient/compare/1.4.2...1.4.3) (2018-04-07)
 
 ### Bug Fixes
- - **request builder:** losen parsing for `userAgent` header, since errors are thrown when having user agent like the below which seems to be still valid.
+- **request builder:** losen parsing for `userAgent` header, since errors are thrown when having user agent like the below which seems to be still valid.
  `Mozilla/5.0 (Linux; Android 6.0; vivo 1601 Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/63.0.3239.111 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/153.0.0.53.88;]`
 
 
 ## [1.4.2](https://github.com/sketch7/FluentlyHttpClient/compare/1.4.1...1.4.2) (2018-03-18)
 
 ### Features
- - **timer middleware:** now logs even when an exception is thrown, which might be useful when a timeout has triggered.
- - **timer middleware:** `SetTimeTaken` now returns `FluentHttpResponse` instead of `void`.
+- **timer middleware:** now logs even when an exception is thrown, which might be useful when a timeout has triggered.
+- **timer middleware:** `SetTimeTaken` now returns `FluentHttpResponse` instead of `void`.
 
 
 ## [1.4.1](https://github.com/sketch7/FluentlyHttpClient/compare/1.4.0...1.4.1) (2018-03-04)
 
 ### Bug Fixes
- - **request builder:** items within request/response e.g. time taken (from timer middleware) were updating the request builder items which 
+- **request builder:** items within request/response e.g. time taken (from timer middleware) were updating the request builder items which 
  was causing susequent requests built by the same request builder to fail.
- - **http client builder:** `Withdentifier` has been renamed correctly to `WithIdentifier` previous one was marked as obsolete.
+- **http client builder:** `Withdentifier` has been renamed correctly to `WithIdentifier` previous one was marked as obsolete.
 
  ### Deprecated code
 
- - **http client builder:** `Withdentifier` has been marked as obsolete, instead the newly `WithIdentifier`.
+- **http client builder:** `Withdentifier` has been marked as obsolete, instead the newly `WithIdentifier`.
 
 
 ## [1.4.0](https://github.com/sketch7/FluentlyHttpClient/compare/1.3.0...1.4.0) (2018-03-03)
 
 ### Features
- - **logger middleware:** add `LoggerHttpMiddlewareOptions` to configure `ShouldLogDetailedRequest` and `ShouldLogDetailedResponse`.
- - **logger middleware:** add `WithLoggingOptions` on request builder, to specify options per request.
- - **timer middleware:** add `WithTimerWarnThreshold` on request builder, to specify options per request.
+- **logger middleware:** add `LoggerHttpMiddlewareOptions` to configure `ShouldLogDetailedRequest` and `ShouldLogDetailedResponse`.
+- **logger middleware:** add `WithLoggingOptions` on request builder, to specify options per request.
+- **timer middleware:** add `WithTimerWarnThreshold` on request builder, to specify options per request.
 
 
 ## [1.3.0](https://github.com/sketch7/FluentlyHttpClient/compare/1.2.1...1.3.0) (2018-02-24)
 
 ### Features
- - **http client builder:** add `ConfigureFormatters` which now able to configure `Default` formatter to be used.
- - **sample:** add sample for MessagePack formatter - see `MessagePackIntegrationTest` and `MessagePackMediaTypeFormatter`.
+- **http client builder:** add `ConfigureFormatters` which now able to configure `Default` formatter to be used.
+- **sample:** add sample for MessagePack formatter - see `MessagePackIntegrationTest` and `MessagePackMediaTypeFormatter`.
 
 ### Deprecated code
 
- - **http client builder:** `WithFormatters` has been marked as obsolete, instead the newly `ConfigureFormatters`.
+- **http client builder:** `WithFormatters` has been marked as obsolete, instead the newly `ConfigureFormatters`.
 
 
 ## [1.2.1](https://github.com/sketch7/FluentlyHttpClient/compare/1.2.0...1.2.1) (2018-02-16)
@@ -131,20 +178,20 @@ clientBuilder.WithRequestBuilderDefaults(builder =>
 
 ### Deprecated code
 
- - **collection extensions:** `Set` has been marked as obsolete, as it can be replaced by 1 liner.
+- **collection extensions:** `Set` has been marked as obsolete, as it can be replaced by 1 liner.
 
 
 ## [1.2.0](https://github.com/sketch7/FluentlyHttpClient/compare/1.1.0...1.2.0) (2018-01-12)
 
 ### Features
 
- - **graphql:** add support for GraphQL to have simpler api's specifically for GraphQL. (thanks to [Kurt Cassar](https://github.com/nismolo) for contribution)
- - **consts:** add `XForwardedFor` in `HeaderTypes`.
+- **graphql:** add support for GraphQL to have simpler api's specifically for GraphQL. (thanks to [Kurt Cassar](https://github.com/nismolo) for contribution)
+- **consts:** add `XForwardedFor` in `HeaderTypes`.
 
 New apis such as:
- - `fluentHttpClient.CreateGqlRequest(query)` - Creates a new HTTP request and configure for GraphQL.
- - `requestBuilder.AsGql(query)` - Configures an existing HTTP request builder as a GraphQL request.
- - `requestBuilder.ReturnAsGqlResponse<T>()` - Sends request and unwrap GraphQL data to be available directly in the `.Data`.
+- `fluentHttpClient.CreateGqlRequest(query)` - Creates a new HTTP request and configure for GraphQL.
+- `requestBuilder.AsGql(query)` - Configures an existing HTTP request builder as a GraphQL request.
+- `requestBuilder.ReturnAsGqlResponse<T>()` - Sends request and unwrap GraphQL data to be available directly in the `.Data`.
 
 See documentation for an example on how it can be used.
 
@@ -177,31 +224,31 @@ This will allow sharing implementations for extensions methods across `FluentHtt
 
 ### Features
 
- - **http client factory:** `Remove` now disposes `IFluentHttpClient`.
- - **http client builder:** implement `WithFormatters` to be able to configure formatters.
+- **http client factory:** `Remove` now disposes `IFluentHttpClient`.
+- **http client builder:** implement `WithFormatters` to be able to configure formatters.
 
- - **http client:** implement `IDisposable` in order to dispose underlying `HttpClient`.
+- **http client:** implement `IDisposable` in order to dispose underlying `HttpClient`.
 
- - **request builder:** implement `ReturnAsString`, `ReturnAsStream` and `ReturnAsByteArray`.
+- **request builder:** implement `ReturnAsString`, `ReturnAsStream` and `ReturnAsByteArray`.
 
- - **request:** `Method` and `Uri` has now also setters.
- - **request:** add `Items` in order to share state across requests/response.
+- **request:** `Method` and `Uri` has now also setters.
+- **request:** add `Items` in order to share state across requests/response.
 
- - **response:** `StatusCode` and `ReasonPhrase` has now also setters.
- - **response:** `Items` now are shared with request.
- - **response:** expose `Content` from `Message`.
+- **response:** `StatusCode` and `ReasonPhrase` has now also setters.
+- **response:** `Items` now are shared with request.
+- **response:** expose `Content` from `Message`.
 
- - **middleware:**now supports arguments via `UseMiddleware<T>(args)`.
+- **middleware:**now supports arguments via `UseMiddleware<T>(args)`.
 
- - **timer middleware:** now supports options, for configure `WarnThreshold`.
- - **timer middleware:** add extension method `UseTimer` for convience.
+- **timer middleware:** now supports options, for configure `WarnThreshold`.
+- **timer middleware:** add extension method `UseTimer` for convience.
 
 ### Code Refactoring
 
- - **http client builder:** rename `AddMiddleware` to `UseMiddleware`.
- - **http client builder:** `UseMiddleware<T>`, <T> is now constrained with `IFluentHttpMiddleware`.
+- **http client builder:** rename `AddMiddleware` to `UseMiddleware`.
+- **http client builder:** `UseMiddleware<T>`, <T> is now constrained with `IFluentHttpMiddleware`.
 
- - **request:** rename `Url` to `Uri`.
+- **request:** rename `Url` to `Uri`.
 
 ### BREAKING CHANGES
  - `FluentHttpClientBuilder.AddMiddleware` has been renamed to `FluentHttpClientBuilder.UseMiddleware`.

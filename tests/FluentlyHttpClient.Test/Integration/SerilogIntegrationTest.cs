@@ -10,7 +10,7 @@ namespace FluentlyHttpClient.Test.Integration
 {
 	public class SerilogIntegrationTest
 	{
-		private IServiceProvider BuildContainer()
+		private static IServiceProvider BuildContainer()
 		{
 			Log.Logger = new LoggerConfiguration()
 				.WriteTo.Console()
@@ -32,23 +32,23 @@ namespace FluentlyHttpClient.Test.Integration
 			var fluentHttpClientFactory = BuildContainer()
 				.GetRequiredService<IFluentHttpClientFactory>();
 
-			var clientBuilder = fluentHttpClientFactory.CreateBuilder("sketch7")
+			var httpClient = fluentHttpClientFactory.CreateBuilder("sketch7")
 				.WithBaseUrl("https://sketch7.com")
 				.UseLogging(new LoggerHttpMiddlewareOptions
 				{
 					ShouldLogDetailedResponse = false,
 					ShouldLogDetailedRequest = false
 				})
-				.WithMessageHandler(mockHttp);
+				.WithMessageHandler(mockHttp)
+				.Build();
 
-			var httpClient = fluentHttpClientFactory.Add(clientBuilder);
 			var hero = await httpClient.CreateRequest("/api/heroes")
 				.AsPost()
 				.WithBody(new Hero
 				{
 					Key = "valeera",
 					Name = "Valeera",
-					Title = "Shadow of the Ucrowned"
+					Title = "Shadow of the Uncrowned"
 				})
 				.WithLoggingOptions(new LoggerHttpMiddlewareOptions
 				{
